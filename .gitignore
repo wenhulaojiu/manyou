@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+logs/
+reference/
+*.log
+*.tar.gz
+screenshots/
+data/cache/
+output/
+.playwright-cli/
