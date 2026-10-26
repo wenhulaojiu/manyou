@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: manyou
+    runtime: node
+    plan: free
+    buildCommand: npm ci --ignore-scripts --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: TZ
+        value: Asia/Shanghai

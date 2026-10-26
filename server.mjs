@@ -13,8 +13,11 @@ export function createApp({providerFactory=createProviders,search=runSearch,time
  const app=http.createServer(async(req,res)=>{
   try {
    const port=app.address()?.port;
-   if(!['127.0.0.1:'+port,'localhost:'+port].includes(req.headers.host))return json(res,403,{error:'仅允许本地访问'});
-   if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return json(res,403,{error:'来源不受支持'});
+   const publicHost=process.env.RENDER_EXTERNAL_HOSTNAME;
+   const hosts=['127.0.0.1:'+port,'localhost:'+port,...(publicHost?[publicHost]:[])];
+   const origins=['http://127.0.0.1:'+port,'http://localhost:'+port,...(publicHost?['https://'+publicHost]:[])];
+   if(!hosts.includes(req.headers.host))return json(res,403,{error:'访问地址不受支持'});
+   if(req.headers.origin&&!origins.includes(req.headers.origin))return json(res,403,{error:'来源不受支持'});
    const url=new URL(req.url,'http://127.0.0.1');
    if(url.pathname==='/api/status'&&req.method==='GET')return json(res,200,{rail:railStatus,flight:{state:flightConfigured()?'configured':'unconfigured',environment:flightEnvironment()},timetable:timetable?.status(localDate(new Date().toISOString()))||{available:false},payment:{enabled:false,message:'试用阶段，未启用收款'},today:localDate(new Date().toISOString())});
    if(url.pathname==='/api/airports'&&req.method==='GET')return json(res,200,{metadata:airportMetadata,cities:airportCities});
@@ -67,6 +70,6 @@ export function createApp({providerFactory=createProviders,search=runSearch,time
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  const app=createApp({timetable:await loadTimetable()}),port=Number(process.env.PORT||4173);
- app.listen(port,'127.0.0.1',()=>console.log('慢游 http://127.0.0.1:'+port));
+ app.listen(port,process.env.HOST||'127.0.0.1',()=>console.log('慢游服务已启动，端口 '+port));
  for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{app.closeAllConnections();app.close();closeRail().finally(()=>process.exit(0))});
 }
